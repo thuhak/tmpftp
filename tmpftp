@@ -1,0 +1,79 @@
+#!/usr/bin/env python2.7
+import os
+import pwd
+import socket
+from random import choice
+from pyftpdlib.log import is_logging_configured, config_logging, debug, logger
+from pyftpdlib.authorizers import DummyAuthorizer
+from pyftpdlib.handlers import FTPHandler
+from pyftpdlib.servers import FTPServer
+
+
+def choices(password, k):
+    for i in range(k):
+        yield choice(password)
+
+
+def choose_port(port_range=None):
+    if port_range is None:
+        port_range = range(2121, 2201)
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    for port in port_range:
+        result = s.connect_ex(('127.0.0.1', port))
+        if result != 0:
+            return port
+
+
+class TmpFTPHandler(FTPHandler):
+    timeout = 60 * 60 * 24
+    def close(self):
+        raise SystemExit
+
+
+class TmpFTPServer(FTPServer):
+    def __init__(self, user, passwd, *args, **kwargs):
+        FTPServer.__init__(self, *args, **kwargs)
+        self.user = user
+        self.passwd = passwd
+
+    def _log_start(self):
+        def get_fqname(obj):
+            try:
+                return obj.__module__ + "." + obj.__class__.__name__
+            except AttributeError:
+                try:
+                    return obj.__module__ + "." + obj.__name__
+                except AttributeError:
+                    return str(obj)
+
+        if not is_logging_configured():
+            config_logging()
+
+        addr = self.address
+        logger.info("starting temp FTP on %s:%s" % (addr[0], addr[1]))
+        logger.info("username is {}, passwd is {}".format(self.user, self.passwd))
+
+
+def main():
+    uid = os.getuid()
+    if os.getuid() == 0:
+        print('do not run as root')
+        exit(0)
+    user = pwd.getpwuid(uid)[0]
+    passwd = ''.join(choices('0123456789', 6))
+    authorizer = DummyAuthorizer()
+    authorizer.add_anonymous(os.getcwd())
+    authorizer.add_user(user, passwd, os.getcwd(), perm='elradfmwM')
+    handler = TmpFTPHandler
+    handler.authorizer = authorizer
+    handler.banner = "temp ftp"
+    port = choose_port()
+    address = ('', port)
+    server = TmpFTPServer(user, passwd, address, handler)
+    handler.passive_ports = range(60000, 65535)
+    server.max_cons_per_ip = 256
+    server.max_cons = 256
+    server.serve_forever()
+
+if __name__ == '__main__':
+    main()
