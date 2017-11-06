@@ -26,8 +26,10 @@ def choose_port(port_range=None):
 
 class TmpFTPHandler(FTPHandler):
     timeout = 60 * 60 * 24
-    def close(self):
-        raise SystemExit
+
+    def on_disconnect(self):
+        if self.username:
+            raise SystemExit
 
 
 class TmpFTPServer(FTPServer):
