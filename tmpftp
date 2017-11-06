@@ -3,7 +3,7 @@ import os
 import pwd
 import socket
 from random import choice
-from pyftpdlib.log import is_logging_configured, config_logging, debug, logger
+from pyftpdlib.log import is_logging_configured, config_logging, logger
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import FTPServer
@@ -17,8 +17,8 @@ def choices(password, k):
 def choose_port(port_range=None):
     if port_range is None:
         port_range = range(2121, 2201)
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     for port in port_range:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         result = s.connect_ex(('127.0.0.1', port))
         if result != 0:
             return port
