@@ -64,7 +64,6 @@ def main():
     user = pwd.getpwuid(uid)[0]
     passwd = ''.join(choices('0123456789', 6))
     authorizer = DummyAuthorizer()
-    authorizer.add_anonymous(os.getcwd())
     authorizer.add_user(user, passwd, os.getcwd(), perm='elradfmwM')
     handler = TmpFTPHandler
     handler.authorizer = authorizer
@@ -76,6 +75,7 @@ def main():
     server.max_cons_per_ip = 256
     server.max_cons = 256
     server.serve_forever()
+
 
 if __name__ == '__main__':
     main()
