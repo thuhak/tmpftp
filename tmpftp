@@ -68,6 +68,7 @@ def main():
     handler = TmpFTPHandler
     handler.authorizer = authorizer
     handler.banner = "temp ftp"
+    handler.permit_privileged_ports = True
     port = choose_port()
     address = ('', port)
     server = TmpFTPServer(user, passwd, address, handler)
